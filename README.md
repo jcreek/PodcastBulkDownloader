@@ -2,17 +2,87 @@
 
 # Podcast Bulk Downloader
 
-![example workflow](https://github.com/cnovel/PodcastBulkDownloader/actions/workflows/python-app.yml/badge.svg) [![codecov](https://codecov.io/gh/cnovel/PodcastBulkDownloader/branch/master/graph/badge.svg)](https://codecov.io/gh/cnovel/PodcastBulkDownloader) ![version](https://img.shields.io/badge/Python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
+[![Docker Pulls](https://img.shields.io/docker/pulls/cnovel/podcast-bulk-downloader)](https://hub.docker.com/r/cnovel/podcast-bulk-downloader)
+[![Release Workflow](https://img.shields.io/github/actions/workflow/status/cnovel/PodcastBulkDownloader/release.yml?branch=main&label=release)](https://github.com/cnovel/PodcastBulkDownloader/actions/workflows/release.yml)
+[![Docker CI Workflow](https://img.shields.io/github/actions/workflow/status/cnovel/PodcastBulkDownloader/docker.yml?label=docker%20ci)](https://github.com/cnovel/PodcastBulkDownloader/actions/workflows/docker.yml)
 
-**Podcast Bulk Downloader** is a simple soft that allows you to download all the episodes of a podcast feed in a folder.
+**Podcast Bulk Downloader** is a simple tool that allows you to download all the episodes of a podcast feed into a folder. It can run on Windows, macOS, or in Docker.
 
-⚠️ Several antivirus providers flag Podcast Bulk Downloader as a trojan ([see this issue](https://github.com/cnovel/PodcastBulkDownloader/issues/77)). The issue is being investigated but in the meantime, please flag the exe as false positive to your AV provider. It will greatly help me!
+## Docker (Recommended)
+
+### Quick Starta
+
+1. Create a `feeds.json` file (see Config Format below)
+2. Create a `docker-compose.yml`:
+
+```yaml
+services:
+  podcast-bulk-downloader:
+    image: cnovel/podcast-bulk-downloader:latest
+    container_name: podcast-bulk-downloader
+    volumes:
+      - ./feeds.json:/config/feeds.json:ro
+      - ./downloads:/downloads
+    environment:
+      - SCHEDULE_TIME=03:00
+      - RUN_ONCE=false
+    restart: unless-stopped
+```
+
+3. Run:
+
+```bash
+docker-compose up -d
+```
+
+The container will check for new episodes daily at the specified time (default: 03:00). By default, it skips episodes already downloaded - just add new feeds and it "just works".
+
+### Environment Variables
+
+| Variable        | Description                   | Default |
+| --------------- | ----------------------------- | ------- |
+| `SCHEDULE_TIME` | Time to check daily (HH:MM)   | `03:00` |
+| `RUN_ONCE`      | Run once instead of scheduled | `false` |
+
+### Config Format
+
+Create a `feeds.json` file:
+
+```json
+{
+  "feeds": [
+    {
+      "url": "https://example.com/podcast.rss",
+      "subfolder": "my_podcast",
+      "prefix": "DATE",
+      "last_n": 0,
+      "overwrite": false
+    }
+  ]
+}
+```
+
+| Field       | Description                    | Default                   |
+| ----------- | ------------------------------ | ------------------------- |
+| `url`       | RSS feed URL                   | required                  |
+| `subfolder` | Subfolder name                 | "default"                 |
+| `prefix`    | Filename prefix                | `NO_PREFIX`               |
+| `last_n`    | Episodes to download (0 = all) | 1                         |
+| `overwrite` | Re-download existing files     | `false` (skip duplicates) |
+
+Config file is mounted at `/config/feeds.json` and downloads are saved to `/downloads` (see volumes in docker-compose).
+
+### Docker Hub
+
+```bash
+docker pull cnovel/podcast-bulk-downloader
+```
 
 ## Windows
 
-### How to use Podcast Bulk Downloader
+⚠️ Several antivirus providers flag Podcast Bulk Downloader as a trojan ([see this issue](https://github.com/cnovel/PodcastBulkDownloader/issues/77)). The issue is being investigated but in the meantime, please flag the exe as false positive to your AV provider. It will greatly help me!
 
-#### CLI version
+### CLI
 
 Usage: `PodcastBulkDownloaderCLI.exe -f FOLDER --url RSS_URL [--overwrite] [-l LAST_N]`
 
@@ -23,7 +93,7 @@ Arguments:
 - `-f FOLDER`, `--folder FOLDER`: Destination folder for MP3 files
 - `--overwrite`: Will overwrite existing files
 - `-l LAST_N`, `--last LAST_N`: Will only download the last N episodes. If N=0, download all the episodes
-- `--prefix [NO_PREFIX, DATE, DATE_TIME]`: Optional, choose is you want to prefix with date or date_time
+- `--prefix [NO_PREFIX, DATE, DATE_TIME]`: Optional, choose if you want to prefix with date or date_time
 - `-v`, `--version`: Print version
 
 Example:
@@ -32,7 +102,7 @@ Example:
 PodcastBulkDownloaderCLI.exe -f "G:\Musique\RadioKawa\Ta Gueule" --url https://feeds.radiokawa.com/podcast_ta-gueule.xml
 ```
 
-#### GUI Version
+### GUI Version
 
 ![PBD_GUI](img/PBD_GUI_v0.8.png)
 
